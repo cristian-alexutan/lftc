@@ -1,11 +1,10 @@
 <program> ::= <statement_list>
 <statement_list> ::= <statement> <statement_list> | epsilon
-<statement> ::= <let_stmt> | <assign_stmt> | <synth_def> | <play_stmt> | <rest_stmt> | <for_stmt> | <if_stmt> | <input_stmt> | <output_stmt>
+<statement> ::= <let_stmt> | <assign_stmt> | <synth_def> | <play_stmt> | <for_stmt> | <if_stmt> | <input_stmt> | <output_stmt>
 
 <let_stmt> ::= let <identifier> = <expression> ;
 <assign_stmt> ::= <identifier> = <expression> ;
 <play_stmt> ::= play <identifier> at <expression> for <expression> ;
-<rest_stmt> ::= rest <expression> ;
 <input_stmt> ::= input <identifier> ;
 <output_stmt> ::= print <expression> ;
 
@@ -46,11 +45,9 @@
 <identifier_tail> ::= <letter_digit_underscore> <identifier_tail> | epsilon
 <letter_digit_underscore> ::= <lower_letter> | <upper_letter> | <digit> | _
 
-<reserved_word> ::= let | synth | play | rest | at | for | in | if | else | out | input | print | <module_kind> | <param_kind>
+<reserved_word> ::= let | synth | play | at | for | in | if | else | out | input | print | <module_kind> | <param_kind>
 
-<number> ::= <int_part> <fraction_opt>
-<int_part> ::= 0 | <nonzero_digit> <number_tail>
-<fraction_opt> ::= . <digit> <number_tail> | epsilon
+<number> ::= 0 | <nonzero_digit> <number_tail>
 <number_tail> ::= <digit> <number_tail> | epsilon
 <nonzero_digit> ::= 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
 <digit> ::= 0 | <nonzero_digit>

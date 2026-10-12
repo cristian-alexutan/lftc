@@ -1,0 +1,59 @@
+<program> ::= <statement_list>
+<statement_list> ::= <statement> <statement_list> | epsilon
+<statement> ::= <let_stmt> | <assign_stmt> | <synth_def> | <play_stmt> | <rest_stmt> | <for_stmt> | <if_stmt> | <input_stmt> | <output_stmt>
+
+<let_stmt> ::= let <identifier> = <expression> ;
+<assign_stmt> ::= <identifier> = <expression> ;
+<play_stmt> ::= play <identifier> at <expression> for <expression> ;
+<rest_stmt> ::= rest <expression> ;
+<input_stmt> ::= input <identifier> ;
+<output_stmt> ::= print <expression> ;
+
+<synth_def> ::= synth <identifier> { <synth_body> }
+<synth_body> ::= <synth_stmt> <synth_body> | epsilon
+<synth_stmt> ::= <module_decl> | <connection>
+<module_decl> ::= <module_kind> <identifier> ( <param_list_opt> ) ;
+<module_kind> ::= sine | square | saw | noise | lowpass | highpass | lfo | env
+<param_list_opt> ::= <param> <param_tail> | epsilon
+<param_tail> ::= , <param> <param_tail> | epsilon
+<param> ::= <param_kind> : <expression>
+<param_kind> ::= freq | detune | cutoff | resonance | rate | depth | attack | decay | sustain | release | gain
+
+<connection> ::= <endpoint> -> <endpoint> <connection_tail> ;
+<connection_tail> ::= -> <endpoint> <connection_tail> | epsilon
+<endpoint> ::= <identifier> <port_opt> | out
+<port_opt> ::= . <param_kind> | epsilon
+
+<for_stmt> ::= for <identifier> in <expression> .. <expression> { <statement_list> }
+<if_stmt> ::= if <condition> { <statement_list> } <else_part>
+<else_part> ::= else { <statement_list> } | epsilon
+<condition> ::= <expression> <comparison_op> <expression>
+<comparison_op> ::= == | != | < | > | <= | >=
+
+<expression> ::= <term> <expression_rest>
+<expression_rest> ::= <add_op> <term> <expression_rest> | epsilon
+<term> ::= <factor> <term_rest>
+<term_rest> ::= <mul_op> <factor> <term_rest> | epsilon
+<factor> ::= <number> | <identifier> | <note> | ( <expression> ) | - <factor>
+<add_op> ::= + | -
+<mul_op> ::= * | / | %
+
+<note> ::= <note_name> <accidental_opt> <digit>
+<note_name> ::= C | D | E | F | G | A | B
+<accidental_opt> ::= # | b | epsilon
+
+<identifier> ::= <lower_letter> <identifier_tail>
+<identifier_tail> ::= <letter_digit_underscore> <identifier_tail> | epsilon
+<letter_digit_underscore> ::= <lower_letter> | <upper_letter> | <digit> | _
+
+<reserved_word> ::= let | synth | play | rest | at | for | in | if | else | out | input | print | <module_kind> | <param_kind>
+
+<number> ::= <int_part> <fraction_opt>
+<int_part> ::= 0 | <nonzero_digit> <number_tail>
+<fraction_opt> ::= . <digit> <number_tail> | epsilon
+<number_tail> ::= <digit> <number_tail> | epsilon
+<nonzero_digit> ::= 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+<digit> ::= 0 | <nonzero_digit>
+
+<lower_letter> ::= a | b | c | d | e | f | g | h | i | j | k | l | m | n | o | p | q | r | s | t | u | v | w | x | y | z
+<upper_letter> ::= A | B | C | D | E | F | G | H | I | J | K | L | M | N | O | P | Q | R | S | T | U | V | W | X | Y | Z
