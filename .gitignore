@@ -1,0 +1,5 @@
+# seminar directories
+seminar*/
+
+# vim swap files
+*.swp
