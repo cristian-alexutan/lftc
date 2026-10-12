@@ -1,0 +1,67 @@
+Synthax is a small audio programming language which works with synthesizers.
+Synths are defined by choosing sound modules (oscillators, filters, LFOs, envelopes) and then connecting them.
+The user can then play notes on them.
+Notes are written by name (A4, Eb3, C#5) and stand for their frequency in Hz; durations are in milliseconds.
+
+
+1. let - a value used in many places (like the length of a beat) is written once and reused
+
+let beat = 500;
+play lead at A4 for beat;
+play lead at C5 for beat;
+
+
+2. assignment - values need to change while the program runs, e.g. moving a note one octave up
+
+let pitch = A3;
+pitch = pitch * 2;
+play lead at pitch for 500;
+
+
+3. synth - the sound of an instrument is described once, by its modules and how they are connected, and then played as many times as needed
+
+synth lead {
+  saw osc ();
+  lowpass f (cutoff: 800);
+  osc -> f -> out;
+}
+
+
+4. play - produces sound; it says which instrument, which pitch and for how long
+
+play lead at A4 for 1000;
+
+
+5. rest - music needs silence between notes; it says for how long nothing is played
+
+play lead at C4 for 250;
+rest 250;
+play lead at E4 for 250;
+
+
+6. for - music repeats a lot; without a loop the same play statement would be written many times
+
+for i in 0..4 {
+  play lead at C4 for 250;
+}
+
+
+7. if - some notes depend on a condition, e.g. alternating between two notes on even and odd beats
+
+for i in 0..8 {
+  if i % 2 == 0 { play lead at C4 for 250; }
+  else { play lead at G4 for 250; }
+}
+
+
+8. input - the same program can be run with different settings (here the tempo) without editing the code
+
+input tempo;
+let beat = 60000 / tempo;
+
+
+9. print - shows computed values to the user, e.g. to check how long a beat is in milliseconds
+
+let tempo = 120;
+let beat = 60000 / tempo;
+print beat;

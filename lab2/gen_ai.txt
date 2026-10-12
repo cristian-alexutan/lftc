@@ -1,0 +1,123 @@
+❯ read synthax.txt in this directory, it is the bnf definition for a small domain specific programming language for defining and playing synthesizers, report back when you have finished reading it
+
+I've read synthax.txt. It's a BNF grammar for a small synth language. Here's what it covers:
+
+Top level: a program is a list of statements: let, assignment, synth definitions, play, for, if/else, input and print.
+
+Synth definitions: synth name { ... } contains two kinds of lines:
+- Module declarations: kind name(param: expr, ...);. There are 8 module kinds (sine, square, saw, noise, lowpass, highpass, lfo, env) and 11 parameter names (freq, detune, cutoff, resonance, rate, depth, the ADSR envelope stages, and gain).
+- Connections: chains like a -> b.cutoff -> out;. Each endpoint is a module, optionally followed by .param, or the reserved word out.
+
+Playing: play name at <expr> for <expr>;
+
+Control flow: for i in a .. b { ... }, and if <expr> <cmp> <expr> { ... } else { ... } with the 6 usual comparison operators.
+
+Expressions: written so they can be parsed top-down without left recursion. * / % bind tighter than + -, and unary minus works on a factor. A factor can be a number, an identifier, a note, or a parenthesised expression.
+
+Lexical rules:
+- Notes: a capital letter A–G, an optional # or b, then one digit (e.g. C#4, Eb3).
+- Identifiers: start with a lowercase letter, then letters, digits or _.
+- Numbers: whole numbers only, with no leading zeros.
+- Reserved words: the keywords plus every module kind and parameter name.
+
+A few things to keep in mind for later lab work:
+- No decimal numbers. Values like resonance: 0.7 or attack: 0.01 can't be written.
+- The tokenizer has to handle two cases: it must tell . (a parameter port) apart from .. (a range), and it must exclude reserved words from identifiers, because the grammar itself doesn't do that.
+- There are no strings or comments, so print can only output expressions.
+- The only condition form is expr op expr. There's no and/or/not and no else if, though you can nest an if inside an else block.
+
+The directory also has synthax_statements.txt and Sample mini-language spec.docx. I haven't read them. Let me know if you want me to, or what you'd like to do with the grammar next.
+
+❯ are there any obvious mistakes or major things that were left out which would prevent this language from being a usable small proof-of-concept language?
+
+I also read synthax_statements.txt, since it explains what the language is supposed to do: notes evaluate to Hz, durations are in milliseconds, and a play names an instrument, a pitch and a length.
+
+The grammar is in good shape. It's LL(1): each choice can be decided from the next token (let, synth, play and the other keywords; module kind vs. identifier inside a synth; number/identifier/note/(/- in a factor). It has no left recursion, and every example in the statements file parses. Two real gaps remain, plus some smaller ones.
+
+Real gaps
+
+1. There are no decimal numbers. Integers are fine for milliseconds, but many synth parameters need fractions. For example, resonance and gain are usually 0–1, sustain is a level between 0 and 1, and LFO rate is often below 1 Hz. Notes already evaluate to non-whole values (C4 ≈ 261.63 Hz), so the language has to work with real numbers anyway; you just can't type one. The only workaround is 7/10, and that only works if / does real division, which the spec doesn't say.
+- Fix: add <number> ::= <int_part> <fraction_opt> with <fraction_opt> ::= . <digit> <number_tail> | epsilon.
+- Watch out: . would then mean three things (decimal point, port selector, and the start of ..). The tokenizer has to treat 0..4 as 0, .., 4, not as 0. followed by .4. Requiring at least one digit after the decimal point is the usual way to handle this.
+
+2. There's no way to have silence. play is the only thing that moves time forward, so you can't put a rest between notes. Real music needs rests; even the "beat" examples would sound wrong without them. Chords are also impossible, but that's acceptable for a proof of concept.
+- Fix: add <rest_stmt> ::= rest <expression> ; (or wait) and make rest a reserved word.
+
+Things you should at least write down
+
+3. How the played pitch reaches the synth. In saw osc (); the oscillator gets no freq, so it presumably uses the pitch from play ... at X. That rule appears in neither file. You also need to say what happens if someone writes saw osc (freq: 220);. Does the fixed value override the played pitch? And env needs to know when a note starts and stops, which also comes from play implicitly. One sentence in the spec covers all of this. The grammar doesn't need to change.
+
+4. Parameter names are reserved words. Because they're all reserved, let freq = 440;, let rate = 2; and let gain = 5; are syntax errors, and those are exactly the names a user of this language will reach for. You can either live with it or make parameter names reserved only after (, , and .. That's harder to explain in a lexing lab, so living with it is probably the right call. Just mention it.
+
+5. Range bounds. Does 0..4 include 4 or stop before it? The if example runs over 0..8 for 8 beats, which suggests the end is excluded. Say so.
+
+Minor, fine to leave out of a proof of concept
+
+- No comments. They're cheap to add (# ... to end of line) if you want them, but # is already used for sharp notes, so // is safer.
+- print can only output numbers, not strings.
+- No and/or/not. Nested if covers most cases.
+- Some nonsense passes the parser: out -> osc, lowpass f(attack: 10), connecting to a module that doesn't exist. These are normally checked after parsing, in semantic analysis, not in the grammar.
+- epsilon is written as a plain word, so it could be mistaken for a keyword. Use ε or add a note.
+
+In short: add decimals and a rest statement, and write down the rules about pitch and ranges. With those changes it's a usable small language.
+
+❯ regarding point 3., param_kind has freq, which can be added as a parameter to saw; how would the non-terminals for decimal numbers and the rest statement look like
+
+Yes, saw osc (freq: 220); is valid. My point was about the other case: when freq is left out, as in the statements file, the spec should say the oscillator plays the pitch given by play ... at. It should also say what happens when freq is given, and whether the fixed value wins over the played pitch.
+
+Here are the new rules, written in the same style as synthax.txt.
+
+Decimal numbers
+
+Replace the current <number> rule with:
+
+<number> ::= <int_part> <fraction_opt>
+<int_part> ::= 0 | <nonzero_digit> <number_tail>
+<fraction_opt> ::= . <digit> <number_tail> | epsilon
+
+<number_tail>, <nonzero_digit> and <digit> stay as they are. This accepts 0, 440, 0.7, 0.05 and 12.50. It rejects .5 (no whole part), 5. (no digit after the dot) and 007 (leading zeros).
+
+Requiring a digit after the . is what keeps ranges unambiguous. When the tokenizer reaches the . in 0..4, it checks the next character. If it's a digit, the dot is a decimal point. If it's another ., the number ends and .. is the next token. So 0..4 becomes 0, .., 4, and 0.5..4 becomes 0.5, .., 4. The tokenizer needs to look one character past the dot. The parser doesn't change.
+
+Rest statement
+
+<statement> ::= <let_stmt> | <assign_stmt> | <synth_def> | <play_stmt> | <rest_stmt> | <for_stmt> | <if_stmt> | <input_stmt> | <output_stmt>
+
+<rest_stmt> ::= rest <expression> ;
+
+<reserved_word> ::= let | synth | play | rest | at | for | in | if | else | out | input | print | <module_kind> | <param_kind>
+
+The expression is a duration in milliseconds, like the for part of play. rest is a new keyword, so the parser can still choose which kind of statement comes next from its first token.
+
+Example using both
+
+synth lead {
+  saw osc ();
+  lowpass f (cutoff: 800, resonance: 0.7);
+  osc -> f -> out;
+}
+
+let beat = 250;
+for i in 0..4 {
+  play lead at C4 for beat;
+  rest beat * 0.5;
+}
+
+I can add these changes to synthax.txt, and an example for rest to synthax_statements.txt, if you want.
+
+❯ okay, add the rest statement and decimal numbers
+
+I added the rest statement and decimal numbers to the grammar.
+
+synthax.txt
+- <statement> now includes <rest_stmt>.
+- I added the rule <rest_stmt> ::= rest <expression> ; right after <play_stmt>.
+- rest is now in <reserved_word>.
+- <number> is now <int_part> <fraction_opt>. <int_part> is the old integer rule, and <fraction_opt> ::= . <digit> <number_tail> | epsilon.
+
+synthax_statements.txt
+- I added a new section 5, "rest", with an example of a note, a rest, then another note. The for, if, input and print sections are now numbered 6–9.
+
+I didn't add a decimal example to the statements file, because each entry there describes a statement and a number is just a value inside one. If you want one, the easiest place is the synth example: lowpass f (cutoff: 800, resonance: 0.7);.
+
+When you write the tokenizer, remember that a . after digits is a decimal point only if another digit follows it. In 0..4, the dot is followed by a second dot, so the number stops and .. becomes its own token.

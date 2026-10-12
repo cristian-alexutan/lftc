@@ -1,0 +1,79 @@
+let base = A4
+
+synth synth_1 {
+	saw s ();
+	lowpass f (cutoff: 800);
+	env amp (gain: 50);
+	s -> f -> amp -> out;
+}
+
+synth synth_2 {
+	sine s ();
+	highpass f (cutoff: 400);
+	s -> f -> out;
+}
+
+for i in 0..12 {
+	if i%2 == 0 {
+		play synth_1 at base for 4 * 1000;
+	}
+	else {
+		play synth_2 at base for 3 * 1000;
+	}
+}
+
+========================================
+
+input tempo;
+let beat = 60 * 1000 / tempo;
+let half = beat / 2
+
+print beat;
+print half;
+
+let cutoff_base = 800;
+
+synth s1 {
+	saw osc ();
+	lowpass f (cutoff: cutoff_base);
+	lfo wob (rate: 4);
+	wob -> f.cutoff;
+	osc -> f -> out;
+}
+
+for i in 0..4 {
+	if i%2 == 0 {
+		play s1 at A4 for beat;
+	}
+	else {
+		play s1 at Eb4 for beat;
+	}
+}
+
+synth s2 {
+	noise n ();
+	lowpass f (cutoff: cutoff_base / 2);
+	wob -> f.cutoff;
+	osc -> f -> out;
+}
+
+input song_len;
+input tempo;
+
+let beat_2 = 60 * song_len / tempo;
+
+input base_hz;
+
+for i in 0..10 {
+	if i%3 == 0 {
+		play s2 at base_hz for 2 * beat_2;
+	}
+	else {
+		if i%3 == 1 {
+			play s2 at base_hz / 2 for beat_2;
+			else {
+				play s2 at base_hz * 2 for beat_2;
+			}
+		}
+	}
+}
