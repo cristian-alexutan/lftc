@@ -13,7 +13,7 @@
 <synth_body> ::= <synth_stmt> <synth_body> | epsilon
 <synth_stmt> ::= <module_decl> | <connection>
 <module_decl> ::= <module_kind> <identifier> ( <param_list_opt> ) ;
-<module_kind> ::= sine | square | saw | noise | lowpass | highpass | lfo | env
+<module_kind> ::= sine | square | saw | noise | lowpass | highpass | lfo | env | drive
 <param_list_opt> ::= <param> <param_tail> | epsilon
 <param_tail> ::= , <param> <param_tail> | epsilon
 <param> ::= <param_kind> : <expression>
